@@ -129,14 +129,21 @@ void move_fila(Jogo *jogo, int linha_o)
 	}
 	
 }
-void inverte_direcao(Jogo *jogo, int linha_o, int direcao)
+void inverte_direcao(Jogo *jogo, int linha_o)
 {
-	jogo->mapa[linha_o].direcao = direcao;
+	int d = 0;
+	if (jogo->mapa[linha_o].direcao == 0)
+		d = 1;
+	jogo->mapa[linha_o].direcao = d;
 }
 void insere_barreira(Jogo* jogo, int linha_o, int coluna_o)
 {
-	if (jogo->mapa[linha_o].linha[coluna_o] == ' ')
+	if (jogo->mapa[linha_o].linha[coluna_o] == 'X')
 	{
 		jogo->mapa[linha_o].linha[coluna_o] = 'T';
+	}
+	else
+	{
+		_tprintf(TEXT("\n Bloco nao pode ser colocado.\n"));
 	}
 }

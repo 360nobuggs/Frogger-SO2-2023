@@ -38,7 +38,8 @@ typedef struct {
 	int id;
 	Jogo* jogo;
 	CRITICAL_SECTION* cs;
-	HANDLE *Thread_jogo;
+	HANDLE *Threads[4];
 	HANDLE *hEvent;
+	HANDLE* terminate_event;
 }ThreadDadosMemPartilhada;
 

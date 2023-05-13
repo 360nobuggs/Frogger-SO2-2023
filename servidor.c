@@ -18,12 +18,13 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 			EnterCriticalSection(threadDados->cs);
 			threadDados->terminar = 1;
 			LeaveCriticalSection(threadDados->cs);
+			SetEvent(threadDados->terminate_event);
 			break;
 		}
 		if (_tcscmp(cmdToken, TEXT("parar")) == 0) {
 			if (jogoCorre == FALSE) _tprintf(TEXT("O jogo já está em pausa\n"));
 			else {
-				SuspendThread(threadDados->Thread_jogo);
+				//SuspendThread(threadDados->Thread_jogo);
 				_tprintf(TEXT("O jogo parou\n"));
 				jogoCorre = FALSE;
 			}
@@ -33,7 +34,7 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 			if (jogoCorre == TRUE) _tprintf(TEXT("O jogo já está a correr\n"));
 			else
 			{
-				ResumeThread(threadDados->Thread_jogo);
+				//ResumeThread(threadDados->Thread_jogo);
 				_tprintf(TEXT("O jogo continua\n"));
 				jogoCorre = TRUE;
 			}
@@ -53,12 +54,28 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 	return 0;
 }
 
+DWORD WINAPI threadTerminate(LPVOID lpParam)
+{
+	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
+	if (WaitForSingleObject(tDados->terminate_event, INFINITE) == WAIT_OBJECT_0)
+	{
+		EnterCriticalSection(tDados->cs);
+		for (int i = 0; i < 4; i++)
+		{
+			TerminateThread(tDados->Threads[i], 10);
+		}
+		_tprintf(TEXT("Servidor terminou por order sair.\n"));
+		LeaveCriticalSection(tDados->cs);
+		ExitThread(0);
+	}
+	return 0;
+}
 DWORD WINAPI threadJogo(LPVOID lpParam)
 {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
-	while (!tDados->terminar) 
+	while (tDados->terminar != 1)
 	{
-		Sleep(10000 - (tDados->jogo->v_inicial) * 100);
+		Sleep(15000 - (tDados->jogo->v_inicial) * 100);
 		EnterCriticalSection(tDados->cs);
 		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
 		int a = tDados->jogo->dim_max;
@@ -70,13 +87,14 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 		SetEvent(tDados->hEvent);
 		LeaveCriticalSection(tDados->cs);
 	}
+	return 0;
 }
 
 DWORD WINAPI threadConsumidor(LPVOID lpParam) {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	CelulaBuffer cel;
 	TCHAR* comando_parar = TEXT("pararLinha");
-	while (!tDados->terminar)
+	while (tDados->terminar != 1)
 	{
 
 		WaitForSingleObject(tDados->hSemLeitura, INFINITE);
@@ -94,25 +112,43 @@ DWORD WINAPI threadConsumidor(LPVOID lpParam) {
 		EnterCriticalSection(tDados->cs);
 		_tprintf(TEXT("Observador: %s\n"), cel.tcMemPartilhada);
 		if (_tcsicmp(cel.tcMemPartilhada, comando_parar) == 0) {
-			_tprintf(TEXT("Parar \n"));
+			SuspendThread(threadJogo);
+			Sleep(1000 * cel.parametros[0]);
+			ResumeThread(threadJogo);
+			_tprintf(TEXT("Carros parados por %d segundos. \n"),cel.parametros[0]);
 		}
 		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("inserirBloco")) == 0) {
-			insere_barreira(tDados->jogo, cel.parametros[0], cel.parametros[1]);
+			if (cel.parametros[0] > 0 && cel.parametros[0] < tDados->jogo->dim_max && cel.parametros[1]>0 && cel.parametros[1] < NUMERO_COL)
+			{
+				insere_barreira(tDados->jogo, cel.parametros[0], cel.parametros[1]);
+				_tprintf(TEXT("Bloco inserido \n"));
+				SetEvent(tDados->hEvent);
+			}
+			else
+			{
+				_tprintf(TEXT("Valores recebidos invalidos para adiconar bloco. \n"));
+			}
 		}
 		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("inverterLinha")) == 0) {
-			//adiciona_bloco(cel.parametros[0], cel.parametros[1], tDados->jogo);
-			_tprintf(TEXT("Inverter \n"));
-		}
-		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("sair")) == 0) {
+			if (cel.parametros[0] > 0 || cel.parametros[0] < tDados->jogo->dim_max)
+			{
+				inverte_direcao(tDados->jogo, cel.parametros[0]);
+				_tprintf(TEXT("Linha invertida \n"));
+				SetEvent(tDados->hEvent);
+			}
+			else
+			{
+				_tprintf(TEXT("Valor recebido invalido para inverter. \n"));
+			}
 			
 		}
-
-		//ver_mapa(tDados->jogo);
-		//ver_stack(tDados->jogo);
+		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("sair")) == 0) {
+			_tprintf(TEXT("Monitor desconectado \n"));
+		}
 		LeaveCriticalSection(tDados->cs);
 
 	}
-	
+	return 0;
 }
 
 BOOL isUniqueInstance(HANDLE* semaphoreStart) {
@@ -127,7 +163,6 @@ BOOL isUniqueInstance(HANDLE* semaphoreStart) {
 int _tmain(int argc, LPTSTR argv[]) {
 
 	TDados dados;
-	HANDLE hMutexDados;
 	HKEY chave = NULL;
 	TCHAR chave_completa[TAM];
 	DWORD res;
@@ -138,6 +173,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE semaphoreStart;
 	CRITICAL_SECTION csBuffer;
 	HANDLE hEventsDados;
+	HANDLE hTerminate;
 
 #ifdef UNICODE
 	(void)_setmode(_fileno(stdin), _O_WTEXT);
@@ -155,7 +191,13 @@ int _tmain(int argc, LPTSTR argv[]) {
 	hEventsDados = CreateEvent(NULL, TRUE, FALSE, TEXT("EVENTO_DADOS"));
 	if (hEventsDados == NULL)
 	{
-		_tprintf(TEXT("\nErro a criar evento \n "));
+		_tprintf(TEXT("\nErro a criar evento dados\n "));
+		return 1;
+	}
+	hTerminate = CreateEvent(NULL, TRUE, FALSE, TEXT("TERMINATE"));
+	if (hTerminate == NULL)
+	{
+		_tprintf(TEXT("\nErro a criar evento terminate \n "));
 		return 1;
 	}
 	//verifica exitencia de valores no registry,se nao existem cria
@@ -323,6 +365,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	tDadosMemPartilhada.terminar = 0;
 	tDadosMemPartilhada.jogo->dim_max = dados.dim_max;
 	tDadosMemPartilhada.hEvent = hEventsDados;
+	tDadosMemPartilhada.terminate_event = hTerminate;
 	tDadosMemPartilhada.jogo->v_inicial = dados.velocidade;
 
 	WaitForSingleObject(tDadosMemPartilhada.hMutex, INFINITE);
@@ -338,7 +381,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 	if (recebeComandos == NULL) {
 		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
 		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
 		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
 		return -1;
 	}
 	
@@ -346,24 +391,46 @@ int _tmain(int argc, LPTSTR argv[]) {
 	if (threadMovimento == NULL) {
 		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
 		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
 		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
 		return -1;
 	}
-	tDadosMemPartilhada.Thread_jogo = threadMovimento;
 	HANDLE threadComandos = CreateThread(NULL, 0, threadConsoleInterface, &tDadosMemPartilhada, 0, NULL);
 	if (threadComandos == NULL) {
 		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
 		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
 		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
 		return -1;
 	}
-	
+	HANDLE threadTerminar = CreateThread(NULL, 0, threadTerminate, &tDadosMemPartilhada, 0, NULL);
+	if (threadComandos == NULL) {
+		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
+		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
+		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
+		return -1;
+	}
+	tDadosMemPartilhada.Threads[0] = threadComandos;
+	tDadosMemPartilhada.Threads[1] = recebeComandos;
+	tDadosMemPartilhada.Threads[2] = threadMovimento;
 
-	//WaitForSingleObject(enviaComandos, INFINITE);
-	//WaitForSingleObject(threadMovimento, INFINITE);
+
 	WaitForSingleObject(threadComandos, INFINITE);
 	WaitForSingleObject(recebeComandos, INFINITE);
+	WaitForSingleObject(threadMovimento, INFINITE);
+	WaitForSingleObject(threadTerminar, INFINITE);
+
 	UnmapViewOfFile(tDadosMemPartilhada.jogo);
+	UnmapViewOfFile(tDadosMemPartilhada.memPar);
+	CloseHandle(hFileMap);
+	CloseHandle(hjogo);
+	CloseHandle(threadComandos);
+	CloseHandle(recebeComandos);
+	CloseHandle(threadMovimento);
 	RegCloseKey(chave);
 	
 	return 0;

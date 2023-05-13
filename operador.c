@@ -12,10 +12,26 @@ void clrscr()
 {
 	system("@cls||clear");
 }
+DWORD WINAPI threadTerminate(LPVOID lpParam) {
+	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
+	HANDLE hEventTer = OpenEvent(EVENT_ALL_ACCESS, FALSE, TEXT("TERMINATE"));
+	if (hEventTer == NULL)
+	{
+		_tprintf(TEXT("\n Erro a abrir evento."));
+		return 1;
+	}
+	if (WaitForSingleObject(hEventTer, INFINITE) == WAIT_OBJECT_0)
+	{
+		TerminateThread(tDados->Threads[0], 10);
+		TerminateThread(tDados->Threads[1], 10);
+		_tprintf(TEXT("\n Monitor terminado por ordem do servidor."));
+		ExitThread(0);
+	}
+	return 0;
+}
 DWORD WINAPI threadMapa(LPVOID lpParam) {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, TEXT("EVENTO_DADOS"));
-	ResetEvent(hEvent);
 	if (hEvent == NULL)
 	{
 		_tprintf(TEXT("\n Erro a abrir evento."));
@@ -26,7 +42,9 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 	{
 		if (WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0)
 		{
+			//_tprintf(TEXT("%c"), _getch());
 			clrscr();
+			
 			_tprintf(TEXT("\nMenu:\nsair-termina operador\npararLinha-suspende jogo\ninverterLinha y-inverte a direcão de linha y\ninserirBloco y x-insere um bloco em xy\n"));
 			_tprintf(TEXT("\n Pontuação J1: %d"),tDados->jogo->pontuacao);
 			for (int i = 0; i <= tDados->jogo->dim_max; i++)
@@ -51,7 +69,7 @@ DWORD WINAPI threadProdutor(LPVOID lpParam) {
 		CelulaBuffer cel;
 		TCHAR* cmdToken = NULL;
 		TCHAR* cmdNextToken = NULL;
-		_tprintf(TEXT("\nMenu:\nsair-termina operador\npararLinha-suspende jogo\ninverterLinha y-inverte a direcão de linha y\ninserirBloco y x-insere um bloco em xy\n"));
+		_tprintf(TEXT("\nMenu:\nsair-termina operador\npararLinha-suspende linha\ninverterLinha y-inverte a direcão de linha y\ninserirBloco y x-insere um bloco em xy\n"));
 		while (TRUE) {
 			_ftprintf(stdout, TEXT(">"));
 			_fgetts(cel.tcMemPartilhada, MAX_STR_SIZE, stdin);
@@ -122,7 +140,7 @@ DWORD WINAPI threadProdutor(LPVOID lpParam) {
 
 int  _tmain(int argc, TCHAR* argv[]) {
 	HANDLE hSemaphoreServidorUnique;
-	HANDLE hThreadProdutor, hThreadMapa;
+	HANDLE hThreadProdutor, hThreadMapa, hThreadTerminate;
 	HANDLE hFileMap, hFileJogo;
 	ThreadDadosMemPartilhada tDadosMemPartilhada;
 	TDados threadDados;
@@ -197,11 +215,30 @@ int  _tmain(int argc, TCHAR* argv[]) {
 		_tprintf(TEXT("Erro na thread mapa"));
 		return -1;
 	}
+	hThreadTerminate = CreateThread(
+		NULL,
+		0,
+		threadTerminate,
+		&tDadosMemPartilhada,
+		0,
+		NULL);
+	if (hThreadTerminate == NULL) {
+		_tprintf(TEXT("Erro na thread mapa"));
+		return -1;
+	}
+	tDadosMemPartilhada.Threads[0] = hThreadMapa;
+	tDadosMemPartilhada.Threads[1] = hThreadProdutor;
+	
+
+
 	WaitForSingleObject(hThreadProdutor, INFINITE);
 	WaitForSingleObject(hThreadMapa, INFINITE);
+	WaitForSingleObject(hThreadTerminate, INFINITE);
 	tDadosMemPartilhada.terminar = 1;
 
 	CloseHandle(hThreadProdutor);
+	CloseHandle(hThreadMapa);
+	CloseHandle(hThreadTerminate);
 	return 0;
 }
 
