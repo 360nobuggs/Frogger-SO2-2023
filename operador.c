@@ -8,6 +8,10 @@ BOOL isUniqueInstance(HANDLE* semaphoreStart) {
 	}
 	return TRUE;
 }
+void clrscr()
+{
+	system("@cls||clear");
+}
 DWORD WINAPI threadMapa(LPVOID lpParam) {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, TEXT("EVENTO_DADOS"));
