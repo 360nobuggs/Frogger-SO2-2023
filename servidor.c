@@ -13,41 +13,49 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 		fflush(stdin);
 		_fgetts(cmd, MAX_STR_SIZE, stdin);
 		cmdToken = _tcstok_s(cmd, seps, &cmdNextToken);
-		if (_tcscmp(cmdToken, TEXT("sair")) == 0)
+		if (cmdToken != NULL)
 		{
-			EnterCriticalSection(threadDados->cs);
-			threadDados->terminar = 1;
-			LeaveCriticalSection(threadDados->cs);
-			SetEvent(threadDados->terminate_event);
-			break;
-		}
-		if (_tcscmp(cmdToken, TEXT("parar")) == 0) {
-			if (jogoCorre == FALSE) _tprintf(TEXT("O jogo já está em pausa\n"));
-			else {
-				//SuspendThread(threadDados->Thread_jogo);
-				_tprintf(TEXT("O jogo parou\n"));
-				jogoCorre = FALSE;
-			}
-			continue;
-		}
-		if (_tcscmp(cmdToken, TEXT("continuar")) == 0) {
-			if (jogoCorre == TRUE) _tprintf(TEXT("O jogo já está a correr\n"));
-			else
+			if (_tcscmp(cmdToken, TEXT("sair")) == 0)
 			{
-				//ResumeThread(threadDados->Thread_jogo);
-				_tprintf(TEXT("O jogo continua\n"));
-				jogoCorre = TRUE;
+				//EnterCriticalSection(threadDados->cs);
+				threadDados->terminar = 1;
+				SetEvent(threadDados->terminate_event);
+				//ExitThread(0);
+				//LeaveCriticalSection(threadDados->cs);
+				break;
 			}
-			continue;
-		}
-		if (_tcscmp(cmdToken, TEXT("reiniciar")) == 0) {
-			
+			else if (_tcscmp(cmdToken, TEXT("parar")) == 0) {
+				if (jogoCorre == FALSE) _tprintf(TEXT("O jogo já está em pausa\n"));
+				else {
+					//SuspendThread(threadDados->Thread_jogo);
+					_tprintf(TEXT("O jogo parou\n"));
+					jogoCorre = FALSE;
+				}
+				continue;
+			}
+			else if (_tcscmp(cmdToken, TEXT("continuar")) == 0) {
+				if (jogoCorre == TRUE) _tprintf(TEXT("O jogo já está a correr\n"));
+				else
+				{
+					//ResumeThread(threadDados->Thread_jogo);
+					_tprintf(TEXT("O jogo continua\n"));
+					jogoCorre = TRUE;
+				}
+				continue;
+			}
+			else if (_tcscmp(cmdToken, TEXT("reiniciar")) == 0) {
+
 				EnterCriticalSection(threadDados->cs);
 				inicia_jogo(threadDados->jogo, threadDados->jogo->dim_max);
 				_tprintf(TEXT("O jogo reiniciou\n"));
 				LeaveCriticalSection(threadDados->cs);
-			
-			continue;
+
+				continue;
+			}
+			else
+			{
+				_tprintf(TEXT("Comando nao reconhecido\n"));
+			}
 		}
 
 	}
@@ -66,9 +74,9 @@ DWORD WINAPI threadTerminate(LPVOID lpParam)
 		}
 		_tprintf(TEXT("Servidor terminou por order sair.\n"));
 		LeaveCriticalSection(tDados->cs);
-		ExitThread(0);
+		//ExitThread(0);
 	}
-	return 0;
+	
 }
 DWORD WINAPI threadJogo(LPVOID lpParam)
 {
@@ -422,7 +430,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	WaitForSingleObject(threadComandos, INFINITE);
 	WaitForSingleObject(recebeComandos, INFINITE);
 	WaitForSingleObject(threadMovimento, INFINITE);
-	WaitForSingleObject(threadTerminar, INFINITE);
+	//WaitForSingleObject(threadTerminar, INFINITE);
 
 	UnmapViewOfFile(tDadosMemPartilhada.jogo);
 	UnmapViewOfFile(tDadosMemPartilhada.memPar);
@@ -432,6 +440,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(recebeComandos);
 	CloseHandle(threadMovimento);
 	RegCloseKey(chave);
+	
 	
 	return 0;
 }

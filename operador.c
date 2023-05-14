@@ -47,7 +47,7 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 			
 			_tprintf(TEXT("\nMenu:\nsair-termina operador\npararLinha-suspende jogo\ninverterLinha y-inverte a direcão de linha y\ninserirBloco y x-insere um bloco em xy\n"));
 			_tprintf(TEXT("\n Pontuação J1: %d"),tDados->jogo->pontuacao);
-			for (int i = 0; i <= tDados->jogo->dim_max; i++)
+			for (int i = 0; i <= tDados->jogo->dim_max+1; i++)
 			{
 				_tprintf(TEXT("\n"));
 				for (int j = 0; j < NUMERO_COL; j++)
@@ -233,7 +233,7 @@ int  _tmain(int argc, TCHAR* argv[]) {
 
 	WaitForSingleObject(hThreadProdutor, INFINITE);
 	WaitForSingleObject(hThreadMapa, INFINITE);
-	WaitForSingleObject(hThreadTerminate, INFINITE);
+	//WaitForSingleObject(hThreadTerminate, INFINITE);
 	tDadosMemPartilhada.terminar = 1;
 
 	CloseHandle(hThreadProdutor);

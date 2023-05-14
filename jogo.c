@@ -26,7 +26,7 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 	//linha de chegada
 	for (int i = 0; i < NUMERO_COL ; i++)
 	{
-		jogo->mapa[numero_faixas].linha[i] = ' ';
+		jogo->mapa[numero_faixas+1].linha[i] = ' ';
 	}
 	//sapo colocado na linha inicial
 	jogo->sapo.y = 0;
@@ -37,7 +37,7 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 	//tipo de obstaculos 1.carros normais 2.camioes
 	jogo->mapa[numero_faixas - 1].tipo_linha = 2;
 	//resto do mapa
-	for (int i = 1; i < numero_faixas ; i++)
+	for (int i = 1; i <= numero_faixas ; i++)
 	{
 		jogo->mapa[i].direcao = 0;
 		if (jogo->mapa[i].tipo_linha == 2)
@@ -79,7 +79,7 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 }
 void mostra_mapa(Linha mapa[NUMERO_FAIXAS], int num_faixas)
 {
-	for (int i = 0; i <= num_faixas; i++)
+	for (int i = 0; i <= num_faixas+1; i++)
 	{
 		_tprintf(TEXT("\n"));
 		for (int j = 0; j < NUMERO_COL; j++)
