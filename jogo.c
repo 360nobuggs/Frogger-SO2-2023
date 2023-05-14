@@ -115,17 +115,15 @@ void move_fila(Jogo *jogo, int linha_o)
 	}
 	else
 	{
-		for (int i = 0; i < NUMERO_COL; i++)//esquerda
+		char aux[NUMERO_COL];
+		char a = jogo->mapa[linha_o].linha[0];
+		for (int i = 0; i < NUMERO_COL; i++)
 		{
-			char aux[NUMERO_COL];
-			char a = jogo->mapa[linha_o].linha[0];
-			for (int i = 0; i < NUMERO_COL; i++)
-			{
-				aux[i] = jogo->mapa[linha_o].linha[i + 1];
-				jogo->mapa[linha_o].linha[i] = aux[i];
-			}
-			jogo->mapa[linha_o].linha[NUMERO_COL - 1] = a;
+			aux[i] = jogo->mapa[linha_o].linha[i + 1];
+			jogo->mapa[linha_o].linha[i] = aux[i];
 		}
+		jogo->mapa[linha_o].linha[NUMERO_COL - 1] = a;
+		
 	}
 	
 }
