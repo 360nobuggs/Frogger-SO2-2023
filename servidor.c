@@ -27,7 +27,7 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 			else if (_tcscmp(cmdToken, TEXT("parar")) == 0) {
 				if (jogoCorre == FALSE) _tprintf(TEXT("O jogo já está em pausa\n"));
 				else {
-					//SuspendThread(threadDados->Thread_jogo);
+					SuspendThread(threadDados->Threads[2]);
 					_tprintf(TEXT("O jogo parou\n"));
 					jogoCorre = FALSE;
 				}
@@ -37,7 +37,7 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 				if (jogoCorre == TRUE) _tprintf(TEXT("O jogo já está a correr\n"));
 				else
 				{
-					//ResumeThread(threadDados->Thread_jogo);
+					ResumeThread(threadDados->Threads[2]);
 					_tprintf(TEXT("O jogo continua\n"));
 					jogoCorre = TRUE;
 				}
@@ -62,6 +62,145 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 	return 0;
 }
 
+
+DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
+{
+	Mensagem_Sapo mensagem;
+	DWORD n;
+	int i;
+	Men_Atualiza* dados = (Men_Atualiza*)param;
+	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, TEXT("EVENTO_DADOS"));
+	if (hEvent == NULL)
+	{
+		_tprintf(TEXT("\n Erro a abrir evento."));
+		return 1;
+	}
+	do {
+		if (WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0)
+		{
+			for (i = 0; i < N; i++) //ENVIA A MESMA MENSAGEM PARA TODOS OS SAPOS ATIVOS
+			{
+
+				WaitForSingleObject(dados->td->hMutex, INFINITE);
+				if (dados->td->hPipes[i].activo == 1)
+				{
+					_tprintf(TEXT("[ERRO] %c\n", dados->jogo->mapa[3].linha[4]));
+					mensagem.jogo = *dados->jogo;
+					if (!WriteFile(dados->td->hPipes[i].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
+						_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+					}
+					else {
+						_tprintf(TEXT("[ThreadDados] Enviei %d bytes ao sapo %d... (WriteFile)\n"), n, i);
+					}
+				}
+				ReleaseMutex(dados->td->hMutex);
+			}
+			ResetEvent(hEvent);
+		}
+
+	} while (dados->td->terminar!=1);
+	//ASSINALAR PARA TERMINAR 
+	for (i = 0; i < N; i++)
+		SetEvent(dados->td->hEvents[i]);
+	return 0;
+}
+DWORD WINAPI leitorMensagens(LPVOID lpParam) {
+	HANDLE hPipe, hThread, hEventTemp;
+	ThreadDadosMemPartilhada* threadDados = (ThreadDadosMemPartilhada*)lpParam;
+	ThreadMensagemDados dados;
+	int i, numClientes = 0;
+	DWORD offset, nBytes, n;
+	Mensagem_Sapo mensagem;
+
+	dados.terminar = 0;
+	dados.hMutex = CreateMutex(NULL, FALSE, NULL);
+	if (dados.hMutex == NULL)
+	{
+		_tprintf(TEXT("[ThreadDados] Erro a criar mutex"));
+		exit(-1);
+	}
+
+	for (int i = 0; i < N; i++) {
+		//cria uma nova instancia para cada leitor
+		//vai aceitar novos clientes em ciclo
+		_tprintf(TEXT("[ThreadDados] Criar uma copia do pipe '%s' ... (CreateNamedPipe)\n"), PIPE_NAME);
+		//N CLIENTES
+		hPipe = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT |
+			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, N,
+			sizeof(Mensagem_Sapo), sizeof(Mensagem_Sapo), 1000, NULL);
+		if (hPipe == INVALID_HANDLE_VALUE) {
+			_tprintf(TEXT("[ThreadDados] [ERRO] Criar Named Pipe! (CreateNamedPipe)"));
+			exit(-1);
+		}
+		//evento overlapped
+		hEventTemp = CreateEvent(NULL, TRUE, FALSE, NULL);
+		if (hEventTemp == NULL)
+		{
+			_tprintf(TEXT("[ThreadDados] Erro a criar Evento"));
+			exit(-1);
+		}
+		dados.hPipes[i].hPipe = hPipe;
+		dados.hPipes[i].activo = FALSE; //NAO ESTA ATIVO NAO TEM CLIENTE ASSOCIADO
+		ZeroMemory(&dados.hPipes[i].overlap, sizeof(dados.hPipes[i].overlap));
+		dados.hPipes[i].overlap.hEvent = hEventTemp;
+		dados.hEvents[i] = hEventTemp;
+
+		_tprintf(TEXT("[ThreadDados] Esperar ligacao de um Sapo... (ConnectNamedPipe)\n"));
+		ConnectNamedPipe(hPipe, &dados.hPipes[i].overlap);// retorno ainda nao da para saber se tem sucesso
+		if (GetLastError == ERROR_IO_PENDING)
+		{
+			_tprintf(TEXT("[ThreadDados] Problema a conectar pipe.\n"));
+		}
+
+	}
+
+	Men_Atualiza men;
+	men.td = &dados;
+	men.jogo = threadDados->jogo;
+	hThread = CreateThread(NULL, 0, ThreadAtualizaSapo, &men, 0, NULL);
+	if (hThread == NULL)
+	{
+		_tprintf(TEXT("Erro a criar thread"));
+		exit(-1);
+	}
+
+	while (!dados.terminar && (numClientes < N))
+	{
+		offset = WaitForMultipleObjects(N, dados.hEvents, FALSE, INFINITE);
+		i = offset - WAIT_OBJECT_0; //indice do array do evento que desbloqueou
+		if (i >= 0 && i < N)
+		{
+			_tprintf(TEXT("[ThreadDados] Sapo numero %d conectado \n"), i);
+
+
+			//ENVIO DE INFORMACAO INICIAL
+			mensagem.jogo = *threadDados->jogo;
+			WaitForSingleObject(dados.hMutex, INFINITE);
+			if (!WriteFile(dados.hPipes[i].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
+				_tprintf(TEXT("[ThreadDados][ERRO] Escrever no pipe! (WriteFile)\n"));
+			}
+			else {
+				_tprintf(TEXT("[ThreadDados] Enviei %d bytes ao sapo %d... (WriteFile)\n"), n, i);
+			}
+			ReleaseMutex(dados.hMutex);
+
+
+			if (GetOverlappedResult(dados.hPipes[i].hPipe, &dados.hPipes[i].overlap, &nBytes, FALSE))
+			{
+				//evento de reset manual
+				ResetEvent(dados.hEvents[i]);
+				WaitForSingleObject(dados.hMutex, INFINITE);
+				dados.hPipes[i].activo = TRUE;//esta instancia esta ativa
+				ReleaseMutex(dados.hMutex);
+				numClientes++;
+			}
+		}
+		dados.terminar = threadDados->terminar;
+	}
+	WaitForSingleObject(hThread, INFINITE);
+	return 0;
+
+}
 DWORD WINAPI threadTerminate(LPVOID lpParam)
 {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
@@ -87,7 +226,7 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 		EnterCriticalSection(tDados->cs);
 		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
 		int a = tDados->jogo->dim_max;
-		for (int i = 1; i < tDados->jogo->dim_max; i++)
+		for (int i = 1; i <= tDados->jogo->dim_max; i++)
 		{
 			move_fila(tDados->jogo, i);
 		}
@@ -120,9 +259,9 @@ DWORD WINAPI threadConsumidor(LPVOID lpParam) {
 		EnterCriticalSection(tDados->cs);
 		_tprintf(TEXT("Observador: %s\n"), cel.tcMemPartilhada);
 		if (_tcsicmp(cel.tcMemPartilhada, comando_parar) == 0) {
-			SuspendThread(threadJogo);
+			SuspendThread(tDados->Threads[2]);
 			Sleep(1000 * cel.parametros[0]);
-			ResumeThread(threadJogo);
+			ResumeThread(tDados->Threads[2]);
 			_tprintf(TEXT("Carros parados por %d segundos. \n"),cel.parametros[0]);
 		}
 		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("inserirBloco")) == 0) {
@@ -414,7 +553,16 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return -1;
 	}
 	HANDLE threadTerminar = CreateThread(NULL, 0, threadTerminate, &tDadosMemPartilhada, 0, NULL);
-	if (threadComandos == NULL) {
+	if (threadTerminar == NULL) {
+		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
+		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
+		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
+		return -1;
+	}
+	HANDLE threadMensagem = CreateThread(NULL, 0, leitorMensagens, &tDadosMemPartilhada, 0, NULL);
+	if (leitorMensagens == NULL) {
 		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
 		UnmapViewOfFile(tDadosMemPartilhada.jogo);
 		UnmapViewOfFile(tDadosMemPartilhada.memPar);
@@ -430,6 +578,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	WaitForSingleObject(threadComandos, INFINITE);
 	WaitForSingleObject(recebeComandos, INFINITE);
 	WaitForSingleObject(threadMovimento, INFINITE);
+	WaitForSingleObject(threadMensagem, INFINITE);
 	//WaitForSingleObject(threadTerminar, INFINITE);
 
 	UnmapViewOfFile(tDadosMemPartilhada.jogo);
@@ -439,6 +588,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(threadComandos);
 	CloseHandle(recebeComandos);
 	CloseHandle(threadMovimento);
+	CloseHandle(threadMensagem);
 	RegCloseKey(chave);
 	
 	

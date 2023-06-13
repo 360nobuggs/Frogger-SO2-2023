@@ -46,7 +46,8 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 			clrscr();
 			
 			_tprintf(TEXT("\nMenu:\nsair-termina operador\npararLinha-suspende jogo\ninverterLinha y-inverte a direcão de linha y\ninserirBloco y x-insere um bloco em xy\n"));
-			_tprintf(TEXT("\n Pontuação J1: %d"),tDados->jogo->pontuacao);
+			//_tprintf(TEXT("\n Pontuação J1: %d"),tDados->jogo->pontuacao);
+			//COLOCAR PONTUACAO
 			for (int i = 0; i <= tDados->jogo->dim_max+1; i++)
 			{
 				_tprintf(TEXT("\n"));

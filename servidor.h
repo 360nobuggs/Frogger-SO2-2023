@@ -3,8 +3,11 @@
 
 #define TAM 200
 #define MAX_STR_SIZE 128
+#define N 2
 #define VELOCIDADE_INICIAL 3
+#define DIM_MENSAGEM 20
 #define REGISTRYPATH "Software\\Frogger"
+#define PIPE_NAME TEXT("\\\\.\\pipe\\sapo")
 #define CONFIGPAIRNAME1 "VEL_INI"
 #define CONFIGPAIRNAME2 "DIM"
 
@@ -26,7 +29,7 @@ typedef struct {
 	int nConsumidores;
 	int posE;
 	int posL;
-	CelulaBuffer buffer[2];
+	CelulaBuffer buffer[8];
 }BufferCircular;
 
 typedef struct {
@@ -43,3 +46,25 @@ typedef struct {
 	HANDLE* terminate_event;
 }ThreadDadosMemPartilhada;
 
+typedef struct {
+	Jogo jogo;
+	TCHAR comando[TAM];
+}Mensagem_Sapo;
+
+typedef struct {
+	HANDLE hPipe; //instancia do named pipe é representada por handle 
+	OVERLAPPED overlap;//PARA OPERAÇÕES ASSINCRONAS
+	BOOL activo;
+}PipeDados;
+
+typedef struct {
+	PipeDados hPipes[N];
+	HANDLE hEvents[N];
+	HANDLE hMutex;
+	int terminar;
+}ThreadMensagemDados;
+
+typedef struct {
+	ThreadMensagemDados* td;
+	Jogo* jogo;
+}Men_Atualiza;

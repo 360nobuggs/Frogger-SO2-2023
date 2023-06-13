@@ -31,9 +31,15 @@ typedef struct {
 }Linha;
 
 typedef struct {
-	Linha mapa[NUMERO_FAIXAS];
-	Posicao sapo;
+	Posicao posicao;
 	int pontuacao;
+	char nome_jogador[20];
+}Sapo;
+
+typedef struct {
+	Linha mapa[NUMERO_FAIXAS];
+	Sapo sapo1;
+	Sapo sapo2;
 	int v_inicial;
 	int dim_max;
 }Jogo;

@@ -29,10 +29,10 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 		jogo->mapa[numero_faixas+1].linha[i] = ' ';
 	}
 	//sapo colocado na linha inicial
-	jogo->sapo.y = 0;
-	jogo->sapo.x = rand() % 20;
-	jogo->sapo.tipo_obstaculo = 'S';
-	jogo->mapa[0].linha[jogo->sapo.x] = jogo->sapo.tipo_obstaculo;
+	jogo->sapo1.posicao.y = 0;
+	jogo->sapo1.posicao.x = rand() % 20;
+	jogo->sapo1.posicao.tipo_obstaculo = 'S';
+	jogo->mapa[0].linha[jogo->sapo1.posicao.x] = jogo->sapo1.posicao.tipo_obstaculo;
 
 	//tipo de obstaculos 1.carros normais 2.camioes
 	jogo->mapa[numero_faixas - 1].tipo_linha = 2;
