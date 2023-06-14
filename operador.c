@@ -61,6 +61,7 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 	}
 
 }
+
 DWORD WINAPI threadProdutor(LPVOID lpParam) {
 	//ThreadDados* threadDados = (ThreadDados*) lpParam;
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;

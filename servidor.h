@@ -8,6 +8,7 @@
 #define DIM_MENSAGEM 20
 #define REGISTRYPATH "Software\\Frogger"
 #define PIPE_NAME TEXT("\\\\.\\pipe\\sapo")
+#define PIPE_NAME_R TEXT("\\\\.\\pipe\\servidor")
 #define CONFIGPAIRNAME1 "VEL_INI"
 #define CONFIGPAIRNAME2 "DIM"
 
@@ -49,6 +50,9 @@ typedef struct {
 typedef struct {
 	Jogo jogo;
 	TCHAR comando[TAM];
+	int id;//0 para sapos, 1 para servidor
+	int cmd;
+	HANDLE* mutex_escrita;
 }Mensagem_Sapo;
 
 typedef struct {
@@ -59,9 +63,11 @@ typedef struct {
 
 typedef struct {
 	PipeDados hPipes[N];
+	PipeDados hPipesR[N];
 	HANDLE hEvents[N];
 	HANDLE hMutex;
 	int terminar;
+	int n_sapo;
 }ThreadMensagemDados;
 
 typedef struct {
