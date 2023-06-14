@@ -29,10 +29,10 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 		jogo->mapa[numero_faixas+1].linha[i] = ' ';
 	}
 	//sapo colocado na linha inicial
-	jogo->sapo1.posicao.y = 0;
-	jogo->sapo1.posicao.x = rand() % 20;
-	jogo->sapo1.posicao.tipo_obstaculo = 'S';
-	jogo->mapa[0].linha[jogo->sapo1.posicao.x] = jogo->sapo1.posicao.tipo_obstaculo;
+	jogo->sapo[0].posicao.y = 0;
+	jogo->sapo[0].posicao.x = rand() % 20;
+	jogo->sapo[0].posicao.tipo_obstaculo = 'S';
+	jogo->mapa[0].linha[jogo->sapo[0].posicao.x] = jogo->sapo[0].posicao.tipo_obstaculo;
 
 	//tipo de obstaculos 1.carros normais 2.camioes
 	jogo->mapa[numero_faixas - 1].tipo_linha = 2;
@@ -96,9 +96,69 @@ void timeout_sapo()
 {
 
 }
-void move_sapo(char direcao, Jogo *jogo)
-{
 
+int  move_sapo(int direcao, Jogo *jogo, int id_sapo)
+{
+	switch (direcao)
+	{
+	case 0://up
+		if (jogo->sapo[id_sapo].posicao.y !=0)
+		{
+			if (jogo->mapa[jogo->sapo[id_sapo].posicao.y - 1].linha[jogo->sapo[id_sapo].posicao.x] == 'X'|| jogo->mapa[jogo->sapo[id_sapo].posicao.y - 1].linha[jogo->sapo[id_sapo].posicao.x] == ' ')//so se pode mover para posicoes vazias
+			{
+				//limpa posicoes
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'X';
+				jogo->sapo[id_sapo].posicao.y--;//-- para cima
+				//escreve novo
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'S';
+			}
+		}
+		break;
+	case 1://right
+		if (jogo->sapo[id_sapo].posicao.x!= NUMERO_COL-1)
+		{
+			if (jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x+1] == 'X' )//so se pode mover para posicoes vazias
+			{
+				//limpa posicoes
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'X';
+				jogo->sapo[id_sapo].posicao.x++;//-- para cima
+				//escreve novo
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'S';
+			}
+		}
+		break;
+	case 2://left
+		if (jogo->sapo[id_sapo].posicao.x-1 != -1)
+		{
+			if (jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x-1] == 'X')//so se pode mover para posicoes vazias
+			{
+				//limpa posicoes
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'X';
+				jogo->sapo[id_sapo].posicao.x--;//-- para cima
+				//escreve novo
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'S';
+			}
+		}
+		break;
+	case 3://down
+		if (jogo->sapo[id_sapo].posicao.y == jogo->dim_max) //vitoria
+		{
+
+		}
+		else
+		{
+			if (jogo->mapa[jogo->sapo[id_sapo].posicao.y+1].linha[jogo->sapo[id_sapo].posicao.x] == 'X')
+			{
+				//limpa posicoes
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'X';
+				jogo->sapo[id_sapo].posicao.y++;//-- para cima
+				//escreve novo
+				jogo->mapa[jogo->sapo[id_sapo].posicao.y].linha[jogo->sapo[id_sapo].posicao.x] = 'S';
+			}
+		}
+		break;
+	}
+	return 0;
 }
 void move_fila(Jogo *jogo, int linha_o)
 {

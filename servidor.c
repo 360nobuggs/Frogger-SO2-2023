@@ -106,6 +106,13 @@ DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 		SetEvent(dados->td->hEvents[i]);
 	return 0;
 }
+void intrepretaComandosSapo(Men_Atualiza *men, Mensagem_Sapo mensagem, int id_sapo)
+{
+	if (mensagem.cmd == LEFT || mensagem.cmd == RIGHT || mensagem.cmd == UP || mensagem.cmd == DOWN)
+	{
+		move_sapo(mensagem.cmd, men->jogo, id_sapo);
+	}
+}
 DWORD WINAPI ThreadRecebeSapo(LPVOID param) //envia mensagens
 {
 	Mensagem_Sapo mensagem;
@@ -131,7 +138,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) {
 	int i, numClientes = 0;
 	DWORD offset, nBytes, n;
 	Mensagem_Sapo mensagem;
-
+	HANDLE mutex_escrita_sapo;
 	dados.terminar = 0;
 	dados.n_sapo = -1;
 	dados.hMutex = CreateMutex(NULL, FALSE, NULL);
@@ -140,7 +147,12 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) {
 		_tprintf(TEXT("[ThreadDados] Erro a criar mutex"));
 		exit(-1);
 	}
-
+	mutex_escrita_sapo=CreateMutex(NULL, FALSE, NULL);
+	if (mutex_escrita_sapo == NULL)
+	{
+		_tprintf(TEXT("[ThreadDados] Erro a criar mutex"));
+		exit(-1);
+	}
 	for (int i = 0; i < N; i++) {
 		//cria uma nova instancia para cada leitor
 		//vai aceitar novos clientes em ciclo
@@ -203,6 +215,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) {
 		{
 			dados.n_sapo++;//numero de sapos conectados
 			_tprintf(TEXT("[ThreadDados] Sapo numero %d conectado \n"), i);
+			
 			if (dados.n_sapo == 0)
 			{
 				hThreadRecepcao1 = CreateThread(NULL, 0, ThreadRecebeSapo, &men, 0, NULL);
@@ -224,7 +237,9 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) {
 			
 
 			//ENVIO DE INFORMACAO INICIAL
+			mensagem.id = 1;
 			mensagem.jogo = *threadDados->jogo;
+			mensagem.mutex_escrita = mutex_escrita_sapo;
 			WaitForSingleObject(dados.hMutex, INFINITE);
 			if (!WriteFile(dados.hPipes[i].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
 				_tprintf(TEXT("[ThreadDados][ERRO] Escrever no pipe! (WriteFile)\n"));

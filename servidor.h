@@ -12,6 +12,12 @@
 #define CONFIGPAIRNAME1 "VEL_INI"
 #define CONFIGPAIRNAME2 "DIM"
 
+#define UP 0
+#define RIGHT 1
+#define LEFT 2
+#define DOWN 3
+#define PONTUACAO 4
+
 typedef struct {
 	int velocidade;
 	int dim_max;
