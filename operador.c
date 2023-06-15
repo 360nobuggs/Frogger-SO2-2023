@@ -1,13 +1,6 @@
-#include "servidor.h"
+#include "SO2_DLL.h"
 
-BOOL isUniqueInstance(HANDLE* semaphoreStart) {
-	semaphoreStart = CreateSemaphore(NULL, 0, 1, TEXT("START_SERVIDOR_SEMAPHORE"));
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		CloseHandle(semaphoreStart);
-		return FALSE;
-	}
-	return TRUE;
-}
+
 void clrscr()
 {
 	system("@cls||clear");
@@ -160,41 +153,8 @@ int  _tmain(int argc, TCHAR* argv[]) {
 		return -1;
 	}
 
+	inicializa_mem(&tDadosMemPartilhada);
 
-
-	tDadosMemPartilhada.hSemEscrita = CreateSemaphore(NULL, 2, 2, TEXT("SO2_SEMAFORO_ESCRITA"));
-	tDadosMemPartilhada.hSemLeitura = CreateSemaphore(NULL, 0, 2, TEXT("SO2_SEMAFORO_LEITURA"));
-
-	tDadosMemPartilhada.hMutex = CreateMutex(NULL, FALSE, TEXT("SO2_MUTEX_PRODUTOR"));
-	if (tDadosMemPartilhada.hSemEscrita == NULL || tDadosMemPartilhada.hSemLeitura == NULL || tDadosMemPartilhada.hMutex == NULL) {
-		_tprintf(TEXT("Erro no semaforo ou no mutex"));
-		return -1;
-	}
-
-	hFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, TEXT("SO2_MEM_PARTILHADA"));
-	if (hFileMap == NULL) return -1;
-	tDadosMemPartilhada.memPar = (BufferCircular*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	if (tDadosMemPartilhada.memPar == NULL)
-	{
-		_tprintf(TEXT("erro no mapviewoffile"));
-		return -1;
-	}
-
-
-	//filemaping jogo
-	hFileJogo = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, TEXT("SO2_MEM_JOGO"));
-	if (hFileJogo == NULL) return -1;
-
-	tDadosMemPartilhada.jogo = (Jogo*)MapViewOfFile(hFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	if (tDadosMemPartilhada.memPar == NULL)
-	{
-		_tprintf(TEXT("erro no mapviewoffile"));
-		return -1;
-	}
-
-	WaitForSingleObject(tDadosMemPartilhada.hMutex, INFINITE);
-	tDadosMemPartilhada.memPar->nProdutores++;
-	ReleaseMutex(tDadosMemPartilhada.hMutex);
 	hThreadProdutor = CreateThread(
 		NULL,
 		0,

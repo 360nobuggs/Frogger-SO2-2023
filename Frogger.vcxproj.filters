@@ -21,6 +21,12 @@
     <ClCompile Include="jogo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SO2_DLL.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pipes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="servidor.h">
@@ -28,6 +34,12 @@
     </ClInclude>
     <ClInclude Include="jogo.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SO2_DLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pipes.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

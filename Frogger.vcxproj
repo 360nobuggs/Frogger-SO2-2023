@@ -129,11 +129,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="jogo.c" />
+    <ClCompile Include="pipes.c" />
     <ClCompile Include="servidor.c" />
+    <ClCompile Include="SO2_DLL.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="jogo.h" />
+    <ClInclude Include="pipes.h" />
     <ClInclude Include="servidor.h" />
+    <ClInclude Include="SO2_DLL.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
