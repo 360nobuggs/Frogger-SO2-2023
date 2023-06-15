@@ -320,7 +320,7 @@ void move_fila(Jogo *jogo, int linha_o)
 			{
 				if (jogo->mapa[linha_o].linha[i] == 'C' || jogo->mapa[linha_o].linha[i] == 'L')
 				{
-					if ((jogo->sapo[0].posicao.x == NUMERO_COL - i - 1) && (jogo->sapo[0].posicao.y == linha_o))
+					if ((jogo->sapo[0].posicao.x ==i +1) && (jogo->sapo[0].posicao.y == linha_o))
 					{
 						reset_sapo(jogo, 0);
 					}
@@ -328,11 +328,24 @@ void move_fila(Jogo *jogo, int linha_o)
 						reset_sapo(jogo, 1);
 					}
 				}
+				aux[i] = 'X';
+				jogo->mapa[linha_o].linha[i] = aux[i];
 			}
-			aux[i] = jogo->mapa[linha_o].linha[i + 1];
-			jogo->mapa[linha_o].linha[i] = aux[i];
+			else
+			{
+				aux[i] = jogo->mapa[linha_o].linha[i + 1];
+				jogo->mapa[linha_o].linha[i] = aux[i];
+			}
 		}
 		jogo->mapa[linha_o].linha[NUMERO_COL - 1] = a;
+		if (jogo->sapo[0].posicao.y == linha_o)
+		{
+			jogo->mapa[linha_o].linha[jogo->sapo[0].posicao.x] = 'S';
+		}
+		if (jogo->sapo[1].posicao.y == linha_o)
+		{
+			jogo->mapa[linha_o].linha[jogo->sapo[0].posicao.x] = 'S';
+		}
 		
 	}
 	
