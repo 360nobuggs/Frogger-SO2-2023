@@ -17,6 +17,11 @@
 #define LEFT 2
 #define DOWN 3
 #define PONTUACAO 4
+#define SAIR 5
+#define TEMPO 6
+#define ESPERA_JOGADOR 7 
+#define JOGADOR_CHEGOU 8
+
 
 typedef struct {
 	int velocidade;
@@ -78,5 +83,5 @@ typedef struct {
 
 typedef struct {
 	ThreadMensagemDados* td;
-	Jogo* jogo;
+	ThreadDadosMemPartilhada* memoria;
 }Men_Atualiza;

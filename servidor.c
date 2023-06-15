@@ -86,10 +86,11 @@ DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 					//_tprintf(TEXT("[ERRO] %c\n", dados->jogo->mapa[3].linha[4]));
 					mensagem.id = 1;
 					//mensagem.mutex_escrita = &dados->td->hMutex;
-					mensagem.jogo = *dados->jogo;
+					mensagem.jogo = *dados->memoria->jogo;
 					
 					if (!WriteFile(dados->td->hPipes[i].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
 						_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
+						dados->td->hPipes[i].activo = 0;
 					}
 					else {
 						_tprintf(TEXT("[ThreadDados] Enviei %d bytes ao sapo %d... (WriteFile)\n"), n, i);
@@ -106,13 +107,22 @@ DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 		SetEvent(dados->td->hEvents[i]);
 	return 0;
 }
-void intrepretaComandosSapo(Men_Atualiza *men, Mensagem_Sapo mensagem, int id_sapo)
+int intrepretaComandosSapo(Men_Atualiza *men, Mensagem_Sapo mensagem, int id_sapo)
 {
 	if (mensagem.cmd == LEFT || mensagem.cmd == RIGHT || mensagem.cmd == UP || mensagem.cmd == DOWN)
 	{
-		move_sapo(mensagem.cmd, men->jogo, id_sapo);
+		EnterCriticalSection(men->memoria->cs);
+		move_sapo(mensagem.cmd, men->memoria->jogo, id_sapo);
+		LeaveCriticalSection(men->memoria->cs);
+		SetEvent(men->memoria->hEvent);
 	}
+	else if (mensagem.cmd==SAIR)
+	{
+		return 1;//sapo desconectado
+	}
+	return 0;
 }
+
 DWORD WINAPI ThreadRecebeSapo(LPVOID param) //envia mensagens
 {
 	Mensagem_Sapo mensagem;
@@ -124,9 +134,18 @@ DWORD WINAPI ThreadRecebeSapo(LPVOID param) //envia mensagens
 	do {
 		if (!ReadFile(dados->td->hPipesR[num].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
 			_tprintf(TEXT("[ERRO] A receber mensagem! (ReadFile)\n"));
+			return 0; //FAILSAFE
 		}
 		else {
 				_tprintf(TEXT("[ThreadDados] Mensagem %d recebida do sapo %d\n"), mensagem.cmd, num);
+				if (intrepretaComandosSapo(dados, mensagem, num) == 1)
+				{
+					_tprintf(TEXT("[ThreadDados] Sapo numero %d desconectado \n"), num);
+					dados->td->hPipes[num].activo = 0;//desativa pipe de envio
+					dados->td->hPipesR[num].activo = 0;
+					dados->td->n_sapo = dados->td->n_sapo - 1;
+					return 1;
+				}
 		}
 	} while (dados->td->terminar != 1);
 	return 0;
@@ -199,7 +218,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) {
 
 	Men_Atualiza men;
 	men.td = &dados;
-	men.jogo = threadDados->jogo;
+	men.memoria = threadDados;
 	hThread = CreateThread(NULL, 0, ThreadAtualizaSapo, &men, 0, NULL);
 	if (hThread == NULL)
 	{
@@ -289,7 +308,7 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	while (tDados->terminar != 1)
 	{
-		Sleep(15000 - (tDados->jogo->v_inicial) * 100);
+		Sleep(10000 - (tDados->jogo->v_inicial) * 100);
 		EnterCriticalSection(tDados->cs);
 		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
 		int a = tDados->jogo->dim_max;

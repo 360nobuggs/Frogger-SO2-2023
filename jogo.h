@@ -38,6 +38,7 @@ typedef struct {
 
 typedef struct {
 	Linha mapa[NUMERO_FAIXAS];
+	int nivel;
 	Sapo sapo[1];//dois sapos
 	int v_inicial;
 	int dim_max;
@@ -49,3 +50,4 @@ void move_fila(Jogo* jogo, int linha_o);
 void inverte_direcao(Jogo* jogo, int linha_o);
 void insere_barreira(Jogo* jogo, int linha_o, int coluna_o);
 int  move_sapo(int direcao, Jogo* jogo, int id_sapo);
+int novo_nivel(Jogo* jogo);
