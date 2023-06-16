@@ -84,7 +84,7 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	while (tDados->terminar != 1)
 	{
-		Sleep(10000 - (tDados->jogo->v_inicial) * 100);
+		Sleep(5000 - (tDados->jogo->v_inicial) * 100);
 		EnterCriticalSection(tDados->cs);
 		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
 		int a = tDados->jogo->dim_max;

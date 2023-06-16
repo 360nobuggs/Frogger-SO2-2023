@@ -59,7 +59,7 @@ int intrepretaComandosSapo(Men_Atualiza* men, Mensagem_Sapo mensagem, int id_sap
 	return 0;
 }
 
-DWORD WINAPI ThreadRecebeSapo(LPVOID param) //envia mensagens
+DWORD WINAPI ThreadRecebeSapo(LPVOID param) //recebe mensagens
 {
 	Mensagem_Sapo mensagem;
 	DWORD n;
@@ -86,7 +86,7 @@ DWORD WINAPI ThreadRecebeSapo(LPVOID param) //envia mensagens
 	} while (dados->td->terminar != 1);
 	return 0;
 }
-DWORD WINAPI leitorMensagens(LPVOID lpParam) {
+DWORD WINAPI leitorMensagens(LPVOID lpParam) { //recebe os sapos
 	HANDLE hPipe, hPipeR, hThread, hEventTemp, hThreadRecepcao1, hThreadRecepcao2;
 	ThreadDadosMemPartilhada* threadDados = (ThreadDadosMemPartilhada*)lpParam;
 	ThreadMensagemDados dados;

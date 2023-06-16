@@ -36,7 +36,7 @@ void inicia_jogo(Jogo* jogo, int numero_faixas) {
 			int carros = 1;
 			for (int j = 0; j < NUMERO_COL; j++)
 			{
-				if (NUMERO_MAX_CARROS/2 > carros)
+				if (NUMERO_MAX_CARROS/3 > carros)
 				{
 					jogo->mapa[i].linha[j] = 'L';
 					j++;
@@ -126,10 +126,10 @@ int novo_nivel(Jogo *jogo)
 		jogo->mapa[i].direcao = 0;
 		if (jogo->mapa[i].tipo_linha == 2)
 		{
-			int carros = 1;
+			int carros = 0;
 			for (int j = 0; j < NUMERO_COL; j++)
 			{
-				if (NUMERO_MAX_CARROS+ jogo->nivel / 2 > carros)
+				if (NUMERO_MAX_CARROS / 2 > carros)
 				{
 					jogo->mapa[i].linha[j] = 'L';
 					j++;
@@ -147,22 +147,54 @@ int novo_nivel(Jogo *jogo)
 			int carros = 1;
 			for (int j = 0; j < NUMERO_COL; j++)
 			{
-				if (NUMERO_MAX_CARROS+ jogo->nivel > carros)
+				if (jogo->nivel <= NUMERO_MAX_CARROS)
 				{
-					int a = rand() % 3;
-					if (a < 2)
+					if (jogo->nivel + 2 > carros)
 					{
-						jogo->mapa[i].linha[j] = 'C';
-						j++;
+						int a = rand() % 3;
+						if (a < 2)
+						{
+							jogo->mapa[i].linha[j] = 'C';
+							j++;
+						}
+						else
+						{
+							jogo->mapa[i].linha[j] = 'X';
+						}
+						carros++;
 					}
-					else
-					{
-						jogo->mapa[i].linha[j] = 'X';
-					}
-					carros++;
+					jogo->mapa[i].linha[j] = 'X';
 				}
-				jogo->mapa[i].linha[j] = 'X';
+				else
+				{
+					if (NUMERO_MAX_CARROS+2 > carros)
+					{
+						int a = rand() % 3;
+						if (a < 2)
+						{
+							jogo->mapa[i].linha[j] = 'C';
+							j++;
+						}
+						else
+						{
+							jogo->mapa[i].linha[j] = 'X';
+						}
+						carros++;
+					}
+					jogo->mapa[i].linha[j] = 'X';
+				}
 
+			}
+		}
+	}
+	if (jogo->nivel > 5)
+	{
+		for (int i = 1; i <= jogo->dim_max; i++)
+		{
+			int a = rand() % 1;
+			if (a == 0)
+			{
+				jogo->mapa[i].direcao = 1;
 			}
 		}
 	}
@@ -316,11 +348,11 @@ void move_fila(Jogo *jogo, int linha_o)
 		char a = jogo->mapa[linha_o].linha[0];
 		for (int i = 0; i < NUMERO_COL; i++)
 		{
-			if (jogo->mapa[linha_o].linha[i +1] == 'S')
+			if (jogo->mapa[linha_o].linha[i] == 'S')
 			{
-				if (jogo->mapa[linha_o].linha[i] == 'C' || jogo->mapa[linha_o].linha[i] == 'L')
+				if (jogo->mapa[linha_o].linha[i+1] == 'C' || jogo->mapa[linha_o].linha[i+1] == 'L')
 				{
-					if ((jogo->sapo[0].posicao.x ==i +1) && (jogo->sapo[0].posicao.y == linha_o))
+					if ((jogo->sapo[0].posicao.x ==i ) && (jogo->sapo[0].posicao.y == linha_o))
 					{
 						reset_sapo(jogo, 0);
 					}
@@ -328,7 +360,8 @@ void move_fila(Jogo *jogo, int linha_o)
 						reset_sapo(jogo, 1);
 					}
 				}
-				aux[i] = 'X';
+				aux[i] = jogo->mapa[linha_o].linha[i + 1];
+				jogo->mapa[linha_o].linha[i-1] = 'X';
 				jogo->mapa[linha_o].linha[i] = aux[i];
 			}
 			else
