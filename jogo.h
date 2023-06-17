@@ -54,3 +54,4 @@ void inverte_direcao(Jogo* jogo, int linha_o);
 void insere_barreira(Jogo* jogo, int linha_o, int coluna_o);
 int  move_sapo(int direcao, Jogo* jogo, int id_sapo);
 int novo_nivel(Jogo* jogo);
+void reset_sapo(Jogo* jogo, int num_sapo);

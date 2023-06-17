@@ -23,7 +23,9 @@ DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 					//_tprintf(TEXT("[ERRO] %c\n", dados->jogo->mapa[3].linha[4]));
 					mensagem.id = 1;
 					//mensagem.mutex_escrita = &dados->td->hMutex;
+					WaitForSingleObject(dados->memoria->hMutex, INFINITE);
 					mensagem.jogo = *dados->memoria->jogo;
+					ReleaseMutex(dados->memoria->hMutex);
 
 					if (!WriteFile(dados->td->hPipes[i].hPipe, &mensagem, sizeof(mensagem), &n, NULL)) {
 						_tprintf(TEXT("[ERRO] Escrever no pipe! (WriteFile)\n"));
@@ -56,6 +58,12 @@ int intrepretaComandosSapo(Men_Atualiza* men, Mensagem_Sapo mensagem, int id_sap
 	else if (mensagem.cmd == SAIR)
 	{
 		return 1;//sapo desconectado
+	}
+	else if (mensagem.cmd == REGRESSO)
+	{
+		WaitForSingleObject(men->memoria->hMutex, INFINITE);
+		reset_sapo(men->memoria->jogo, men->td->n_sapo);
+		ReleaseMutex(men->memoria->hMutex);
 	}
 	return 0;
 }

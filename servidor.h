@@ -21,6 +21,7 @@
 #define TEMPO 6
 #define ESPERA_JOGADOR 7 
 #define JOGADOR_CHEGOU 8
+#define REGRESSO 9
 
 
 typedef struct {
