@@ -15,6 +15,7 @@
 #define NUMERO_COL 20
 #define NUMERO_FAIXAS 10
 #define NUMERO_MAX_CARROS 8
+#define TEMPO_INICIO 100
 
 typedef struct {
 	char  tipo_obstaculo ;
@@ -42,6 +43,8 @@ typedef struct {
 	Sapo sapo[1];//dois sapos
 	int v_inicial;
 	int dim_max;
+	int tempo;
+	int vitoria;
 }Jogo;
 
 void inicia_jogo(Jogo* jogo, int numero_faixas);

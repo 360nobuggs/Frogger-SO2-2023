@@ -1,4 +1,5 @@
 #include "pipes.h";
+
 DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 {
 	Mensagem_Sapo mensagem;
@@ -77,9 +78,11 @@ DWORD WINAPI ThreadRecebeSapo(LPVOID param) //recebe mensagens
 			if (intrepretaComandosSapo(dados, mensagem, num) == 1)
 			{
 				_tprintf(TEXT("[ThreadDados] Sapo numero %d desconectado \n"), num);
+				WaitForSingleObject(dados->td->hMutex,INFINITE);
 				dados->td->hPipes[num].activo = 0;//desativa pipe de envio
 				dados->td->hPipesR[num].activo = 0;
 				dados->td->n_sapo = dados->td->n_sapo - 1;
+				ReleaseMutex(dados->td->hMutex);
 				return 1;
 			}
 		}
@@ -145,7 +148,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) { //recebe os sapos
 		dados.hPipesR[i].hPipe = hPipeR;
 		_tprintf(TEXT("[ThreadDados] Esperar ligacao de um Sapo... (ConnectNamedPipe)\n"));
 		ConnectNamedPipe(hPipe, &dados.hPipes[i].overlap);// retorno ainda nao da para saber se tem sucesso
-		if (GetLastError == ERROR_IO_PENDING)
+		if (GetLastError() == ERROR_IO_PENDING)
 		{
 			_tprintf(TEXT("[ThreadDados] Problema a conectar pipe.\n"));
 		}

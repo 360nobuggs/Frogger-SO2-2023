@@ -6,7 +6,8 @@
 void inicia_jogo(Jogo* jogo, int numero_faixas) {
 	//linha de partida
 	srand(time(NULL));
-	
+	jogo->tempo = TEMPO_INICIO;
+	jogo->vitoria = 0;
 	for (int i = 0; i < NUMERO_COL; i++)
 	{
 		jogo->mapa[0].linha[i] = ' ';

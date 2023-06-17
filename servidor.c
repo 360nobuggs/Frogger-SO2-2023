@@ -63,6 +63,23 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 	return 0;
 }
 
+DWORD WINAPI threadtimer(LPVOID lpParam) {
+	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
+	while (tDados->terminar != 1)
+	{
+		Sleep(1000);
+		EnterCriticalSection(tDados->cs);
+		tDados->jogo->tempo--;
+		if (tDados->jogo->tempo == 0)
+		{
+			tDados->jogo->vitoria = 1;
+			tDados->terminar = 1;
+		}
+		LeaveCriticalSection(tDados->cs);
+		//SetEvent(tDados->hEvent);
+	}
+	return 0;
+}
 DWORD WINAPI threadTerminate(LPVOID lpParam)
 {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
@@ -87,7 +104,6 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 		Sleep(5000 - (tDados->jogo->v_inicial) * 100);
 		EnterCriticalSection(tDados->cs);
 		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
-		int a = tDados->jogo->dim_max;
 		for (int i = 1; i <= tDados->jogo->dim_max; i++)
 		{
 			move_fila(tDados->jogo, i);
@@ -171,7 +187,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ThreadDadosMemPartilhada tDadosMemPartilhada;
 	HANDLE hFileMap, hjogo;
 	HANDLE semaphoreStart;
-	CRITICAL_SECTION csBuffer;
 	HANDLE hEventsDados;
 	HANDLE hTerminate;
 
@@ -349,6 +364,17 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(hjogo);
 		return -1;
 	}
+
+	HANDLE threadTimer= CreateThread(NULL, 0, threadtimer, &tDadosMemPartilhada, 0, NULL);
+	if (threadTimer == NULL) {
+		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
+		UnmapViewOfFile(tDadosMemPartilhada.jogo);
+		UnmapViewOfFile(tDadosMemPartilhada.memPar);
+		CloseHandle(hFileMap);
+		CloseHandle(hjogo);
+		return -1;
+	}
+	
 	tDadosMemPartilhada.Threads[0] = threadComandos;
 	tDadosMemPartilhada.Threads[1] = recebeComandos;
 	tDadosMemPartilhada.Threads[2] = threadMovimento;

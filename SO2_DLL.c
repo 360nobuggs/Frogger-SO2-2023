@@ -10,7 +10,7 @@ BOOL isUniqueInstance(HANDLE* semaphoreStart) {
 	}
 	return TRUE;
 }
-BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dados, HANDLE *hjogo,HANDLE *hFileMap)
+BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dados, HANDLE* hjogo, HANDLE* hFileMap)
 {
 	HKEY chave = NULL;
 	TCHAR chave_completa[TAM];
@@ -36,7 +36,7 @@ BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dado
 		return 1;
 	}
 	//verifica exitencia de valores no registry,se nao existem cria
-	
+
 
 	(void)InitializeCriticalSectionAndSpinCount(&csBuffer, 500);
 	tDadosMemPartilhada->cs = &csBuffer;
@@ -98,7 +98,7 @@ BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dado
 	tDadosMemPartilhada->memPar->nConsumidores++;
 	ReleaseMutex(tDadosMemPartilhada->hMutex);
 }
-BOOL inicializa_mem(ThreadDadosMemPartilhada *tDadosMemPartilhada)
+BOOL inicializa_mem(ThreadDadosMemPartilhada* tDadosMemPartilhada)
 {
 	HANDLE hSemaphoreServidorUnique;
 	HANDLE hThreadProdutor, hThreadMapa, hThreadTerminate;
