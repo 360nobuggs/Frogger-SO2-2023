@@ -89,10 +89,6 @@ void mostra_mapa(Linha mapa[NUMERO_FAIXAS], int num_faixas)
 	}
 }
 
-void timeout_sapo()
-{
-
-}
 int novo_nivel(Jogo *jogo)
 {
 	if (jogo->nivel == 5)
@@ -263,10 +259,8 @@ int  move_sapo(int direcao, Jogo *jogo, int id_sapo)
 		{
 			jogo->nivel++;
 			jogo->sapo[id_sapo].pontuacao++;
-			if (novo_nivel(jogo))
-			{
-				//VITORIA
-			}
+			novo_nivel(jogo);
+			
 		}
 		else
 		{

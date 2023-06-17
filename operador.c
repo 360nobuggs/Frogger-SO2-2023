@@ -35,6 +35,7 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 	{
 		if (WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0)
 		{
+			//EnterCriticalSection(tDados->cs);
 			//_tprintf(TEXT("%c"), _getch());
 			clrscr();
 			
@@ -49,6 +50,7 @@ DWORD WINAPI threadMapa(LPVOID lpParam) {
 					_tprintf(TEXT("%c"), tDados->jogo->mapa[i].linha[j]);
 				}
 			}
+			//LeaveCriticalSection(tDados->cs);
 		}
 		ResetEvent(hEvent);
 	}

@@ -46,11 +46,10 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 			}
 			else if (_tcscmp(cmdToken, TEXT("reiniciar")) == 0) {
 
-				EnterCriticalSection(threadDados->cs);
+				WaitForSingleObject(threadDados->hMutex,INFINITE);
 				inicia_jogo(threadDados->jogo, threadDados->jogo->dim_max);
 				_tprintf(TEXT("O jogo reiniciou\n"));
-				LeaveCriticalSection(threadDados->cs);
-
+				ReleaseMutex(threadDados->hMutex);
 				continue;
 			}
 			else
@@ -67,16 +66,17 @@ DWORD WINAPI threadtimer(LPVOID lpParam) {
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	while (tDados->terminar != 1)
 	{
-		Sleep(1000);
-		EnterCriticalSection(tDados->cs);
+		WaitForSingleObject(tDados->hMutex,INFINITE);
 		tDados->jogo->tempo--;
-		if (tDados->jogo->tempo == 0)
+		if (tDados->jogo->tempo <= 0)
 		{
 			tDados->jogo->vitoria = 1;
 			tDados->terminar = 1;
+			//ALTERAR , espera um pouco pelo outro evento
 		}
-		LeaveCriticalSection(tDados->cs);
-		//SetEvent(tDados->hEvent);
+		ReleaseMutex(tDados->hMutex);
+		SetEvent(tDados->hEvent);
+		Sleep(1000);
 	}
 	return 0;
 }
@@ -85,13 +85,13 @@ DWORD WINAPI threadTerminate(LPVOID lpParam)
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	if (WaitForSingleObject(tDados->terminate_event, INFINITE) == WAIT_OBJECT_0)
 	{
-		EnterCriticalSection(tDados->cs);
+		WaitForSingleObject(tDados->hMutex, INFINITE);
 		for (int i = 0; i < 4; i++)
 		{
 			TerminateThread(tDados->Threads[i], 10);
 		}
 		_tprintf(TEXT("Servidor terminou por order sair.\n"));
-		LeaveCriticalSection(tDados->cs);
+		ReleaseMutex(tDados->hMutex);
 		//ExitThread(0);
 	}
 	
@@ -101,16 +101,16 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	while (tDados->terminar != 1)
 	{
-		Sleep(5000 - (tDados->jogo->v_inicial) * 100);
-		EnterCriticalSection(tDados->cs);
-		//_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->v_inicial);
+		WaitForSingleObject(tDados->hMutex, INFINITE);
+		_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->tempo);
 		for (int i = 1; i <= tDados->jogo->dim_max; i++)
 		{
 			move_fila(tDados->jogo, i);
 		}
-		mostra_mapa(tDados->jogo, tDados->jogo->dim_max);
+		mostra_mapa(tDados->jogo->mapa, tDados->jogo->dim_max);
+		ReleaseMutex(tDados->hMutex);
 		SetEvent(tDados->hEvent);
-		LeaveCriticalSection(tDados->cs);
+		Sleep(5000 - (tDados->jogo->v_inicial) * 100);
 	}
 	return 0;
 }
@@ -134,7 +134,7 @@ DWORD WINAPI threadConsumidor(LPVOID lpParam) {
 
 		_tprintf(TEXT("Observador: %s %d %d\n"), cel.tcMemPartilhada, cel.parametros[0], cel.parametros[1]);
 
-		EnterCriticalSection(tDados->cs);
+		WaitForSingleObject(tDados->hMutex, INFINITE);
 		_tprintf(TEXT("Observador: %s\n"), cel.tcMemPartilhada);
 		if (_tcsicmp(cel.tcMemPartilhada, comando_parar) == 0) {
 			SuspendThread(tDados->Threads[2]);
@@ -170,7 +170,7 @@ DWORD WINAPI threadConsumidor(LPVOID lpParam) {
 		else if (_tcsicmp(cel.tcMemPartilhada, TEXT("sair")) == 0) {
 			_tprintf(TEXT("Monitor desconectado \n"));
 		}
-		LeaveCriticalSection(tDados->cs);
+		ReleaseMutex(tDados->hMutex);
 
 	}
 	return 0;

@@ -48,9 +48,9 @@ int intrepretaComandosSapo(Men_Atualiza* men, Mensagem_Sapo mensagem, int id_sap
 {
 	if (mensagem.cmd == LEFT || mensagem.cmd == RIGHT || mensagem.cmd == UP || mensagem.cmd == DOWN)
 	{
-		EnterCriticalSection(men->memoria->cs);
+		WaitForSingleObject(men->memoria->hMutex,INFINITE);
 		move_sapo(mensagem.cmd, men->memoria->jogo, id_sapo);
-		LeaveCriticalSection(men->memoria->cs);
+		ReleaseMutex(men->memoria->hMutex);
 		SetEvent(men->memoria->hEvent);
 	}
 	else if (mensagem.cmd == SAIR)
