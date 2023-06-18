@@ -9,7 +9,7 @@ DWORD WINAPI threadConsoleInterface(LPVOID lpParam) {
 	const TCHAR* seps = TEXT(" \n");
 	ThreadDadosMemPartilhada* threadDados = (ThreadDadosMemPartilhada*)lpParam;
 	_tprintf(TEXT("\nMenu:\nsair-termina jogo\nparar-suspende jogo\ncontinuar-continua jogo\nreiniciar-reinicia jogo\n"));
-	while (TRUE) {
+	while (threadDados->terminar!=1) {
 		_ftprintf(stdout, TEXT(">"));
 		fflush(stdin);
 		_fgetts(cmd, MAX_STR_SIZE, stdin);
@@ -72,6 +72,7 @@ DWORD WINAPI threadtimer(LPVOID lpParam) {
 		{
 			tDados->jogo->vitoria = 1;
 			tDados->terminar = 1;
+			SetEvent(tDados->terminate_event);
 			//ALTERAR , espera um pouco pelo outro evento
 		}
 		ReleaseMutex(tDados->hMutex);
@@ -86,11 +87,20 @@ DWORD WINAPI threadTerminate(LPVOID lpParam)
 	if (WaitForSingleObject(tDados->terminate_event, INFINITE) == WAIT_OBJECT_0)
 	{
 		WaitForSingleObject(tDados->hMutex, INFINITE);
+		ReleaseSemaphore(tDados->hSemLeitura, 1, NULL);
+		ReleaseSemaphore(tDados->hSemEscrita, 1, NULL);
+
+
+
+
+
+
+		/*
 		for (int i = 0; i < 4; i++)
 		{
 			TerminateThread(tDados->Threads[i], 10);
 		}
-		_tprintf(TEXT("Servidor terminou por order sair.\n"));
+		_tprintf(TEXT("Servidor terminou por order sair.\n"));*/
 		ReleaseMutex(tDados->hMutex);
 		//ExitThread(0);
 	}
@@ -383,20 +393,23 @@ int _tmain(int argc, LPTSTR argv[]) {
 	tDadosMemPartilhada.Threads[2] = threadMovimento;
 
 
-	WaitForSingleObject(threadComandos, INFINITE);
-	WaitForSingleObject(recebeComandos, INFINITE);
 	WaitForSingleObject(threadMovimento, INFINITE);
+	WaitForSingleObject(recebeComandos, INFINITE);
+	WaitForSingleObject(threadTimer, INFINITE);
+	TerminateThread(threadComandos, 1);
+	WaitForSingleObject(threadComandos, INFINITE);
 	WaitForSingleObject(threadMensagem, INFINITE);
 	//WaitForSingleObject(threadTerminar, INFINITE);
 
 	UnmapViewOfFile(tDadosMemPartilhada.jogo);
 	UnmapViewOfFile(tDadosMemPartilhada.memPar);
-	CloseHandle(hFileMap);
-	CloseHandle(hjogo);
+	//CloseHandle(hFileMap);
+	//CloseHandle(hjogo);
 	CloseHandle(threadComandos);
 	CloseHandle(recebeComandos);
 	CloseHandle(threadMovimento);
 	CloseHandle(threadMensagem);
+	CloseHandle(threadTimer);
 	RegCloseKey(chave);
 	
 	

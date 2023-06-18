@@ -13,7 +13,7 @@ BOOL isUniqueInstance(HANDLE* semaphoreStart) {
 BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dados, HANDLE* hjogo, HANDLE* hFileMap)
 {
 	HKEY chave = NULL;
-	TCHAR chave_completa[TAM];
+	
 	DWORD res;
 	DWORD dwPairValue = 0;
 	DWORD dwBufferSize = sizeof(DWORD);
@@ -100,13 +100,11 @@ BOOL inicializa_mem_s(ThreadDadosMemPartilhada* tDadosMemPartilhada, TDados dado
 }
 BOOL inicializa_mem(ThreadDadosMemPartilhada* tDadosMemPartilhada)
 {
-	HANDLE hSemaphoreServidorUnique;
-	HANDLE hThreadProdutor, hThreadMapa, hThreadTerminate;
 	HANDLE hFileMap, hFileJogo;
 	TDados threadDados;
-	DWORD dwThreadId;
-	TCHAR cmd[256];
-	CRITICAL_SECTION cs;
+	
+	
+	
 
 	tDadosMemPartilhada->hSemEscrita = CreateSemaphore(NULL, 2, 2, TEXT("SO2_SEMAFORO_ESCRITA"));
 	tDadosMemPartilhada->hSemLeitura = CreateSemaphore(NULL, 0, 2, TEXT("SO2_SEMAFORO_LEITURA"));

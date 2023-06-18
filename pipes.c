@@ -13,6 +13,10 @@ DWORD WINAPI ThreadAtualizaSapo(LPVOID param) //envia mensagens
 		return 1;
 	}
 	do {
+		if (dados->memoria->terminar == 1 && dados->memoria->jogo->vitoria == 1)
+		{
+			return 2;
+		}
 		if (WaitForSingleObject(hEvent, INFINITE) == WAIT_OBJECT_0)
 		{
 			for (i = 0; i < N; i++) //ENVIA A MESMA MENSAGEM PARA TODOS OS SAPOS ATIVOS
@@ -90,8 +94,13 @@ DWORD WINAPI threadRecebeMensagens(LPVOID param) //recebe mensagens
 				dados->td->hPipes[num].activo = 0;//desativa pipe de envio
 				dados->td->hPipesR[num].activo = 0;
 				dados->td->n_sapo = dados->td->n_sapo - 1;
+				if (dados->memoria->jogo->vitoria == 1)//final de jogo
+				{
+					dados->td->terminar = 1;
+					for (int i = 0; i < N; i++)
+						SetEvent(dados->td->hEvents[i]);
+				}
 				ReleaseMutex(dados->td->hMutex);
-				return 1;
 			}
 		}
 	} while (dados->td->terminar != 1);
@@ -173,11 +182,10 @@ DWORD WINAPI threadRecebeSapos(LPVOID lpParam) { //recebe os sapos
 		exit(-1);
 	}
 
-	while (!dados.terminar && (numClientes < N))
-	{
+	do{
 		offset = WaitForMultipleObjects(N, dados.hEvents, FALSE, INFINITE);
 		i = offset - WAIT_OBJECT_0; //indice do array do evento que desbloqueou
-		if (i >= 0 && i < N)
+		if (i >= 0 && i < N && dados.terminar == 0)
 		{
 			dados.n_sapo++;//numero de sapos conectados
 			_tprintf(TEXT("[ThreadDados] Sapo numero %d conectado \n"), i);
@@ -185,7 +193,7 @@ DWORD WINAPI threadRecebeSapos(LPVOID lpParam) { //recebe os sapos
 			if (dados.n_sapo == 0)
 			{
 				hThreadRecepcao1 = CreateThread(NULL, 0, threadRecebeMensagens, &men, 0, NULL);
-				if (hThread == NULL)
+				if (hThreadRecepcao1 == NULL)
 				{
 					_tprintf(TEXT("Erro a criar thread"));
 					exit(-1);
@@ -194,7 +202,7 @@ DWORD WINAPI threadRecebeSapos(LPVOID lpParam) { //recebe os sapos
 			else
 			{
 				hThreadRecepcao2 = CreateThread(NULL, 0, threadRecebeMensagens, &men, 0, NULL);
-				if (hThread == NULL)
+				if (hThreadRecepcao2 == NULL)
 				{
 					_tprintf(TEXT("Erro a criar thread"));
 					exit(-1);
@@ -226,8 +234,7 @@ DWORD WINAPI threadRecebeSapos(LPVOID lpParam) { //recebe os sapos
 				numClientes++;
 			}
 		}
-		dados.terminar = threadDados->terminar;
-	}
+	} while (dados.terminar!=1 && (numClientes < N));
 	WaitForSingleObject(hThread, INFINITE);
 
 
