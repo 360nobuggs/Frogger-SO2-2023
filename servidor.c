@@ -102,7 +102,7 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 	while (tDados->terminar != 1)
 	{
 		WaitForSingleObject(tDados->hMutex, INFINITE);
-		_tprintf(TEXT("\n valor de : %d\n"), tDados->jogo->tempo);
+		_tprintf(TEXT("\n Tempo restante: %d\n"), tDados->jogo->tempo);
 		for (int i = 1; i <= tDados->jogo->dim_max; i++)
 		{
 			move_fila(tDados->jogo, i);
