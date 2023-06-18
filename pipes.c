@@ -68,7 +68,7 @@ int intrepretaComandosSapo(Men_Atualiza* men, Mensagem_Sapo mensagem, int id_sap
 	return 0;
 }
 
-DWORD WINAPI ThreadRecebeSapo(LPVOID param) //recebe mensagens
+DWORD WINAPI threadRecebeMensagens(LPVOID param) //recebe mensagens
 {
 	Mensagem_Sapo mensagem;
 	DWORD n;
@@ -97,7 +97,7 @@ DWORD WINAPI ThreadRecebeSapo(LPVOID param) //recebe mensagens
 	} while (dados->td->terminar != 1);
 	return 0;
 }
-DWORD WINAPI leitorMensagens(LPVOID lpParam) { //recebe os sapos
+DWORD WINAPI threadRecebeSapos(LPVOID lpParam) { //recebe os sapos
 	HANDLE hPipe, hPipeR, hThread, hEventTemp, hThreadRecepcao1, hThreadRecepcao2;
 	ThreadDadosMemPartilhada* threadDados = (ThreadDadosMemPartilhada*)lpParam;
 	ThreadMensagemDados dados;
@@ -184,7 +184,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) { //recebe os sapos
 
 			if (dados.n_sapo == 0)
 			{
-				hThreadRecepcao1 = CreateThread(NULL, 0, ThreadRecebeSapo, &men, 0, NULL);
+				hThreadRecepcao1 = CreateThread(NULL, 0, threadRecebeMensagens, &men, 0, NULL);
 				if (hThread == NULL)
 				{
 					_tprintf(TEXT("Erro a criar thread"));
@@ -193,7 +193,7 @@ DWORD WINAPI leitorMensagens(LPVOID lpParam) { //recebe os sapos
 			}
 			else
 			{
-				hThreadRecepcao2 = CreateThread(NULL, 0, ThreadRecebeSapo, &men, 0, NULL);
+				hThreadRecepcao2 = CreateThread(NULL, 0, threadRecebeMensagens, &men, 0, NULL);
 				if (hThread == NULL)
 				{
 					_tprintf(TEXT("Erro a criar thread"));

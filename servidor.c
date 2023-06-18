@@ -358,8 +358,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(hjogo);
 		return -1;
 	}
-	HANDLE threadMensagem = CreateThread(NULL, 0, leitorMensagens, &tDadosMemPartilhada, 0, NULL);
-	if (leitorMensagens == NULL) {
+	HANDLE threadMensagem = CreateThread(NULL, 0, threadRecebeSapos, &tDadosMemPartilhada, 0, NULL);
+	if (threadMensagem == NULL) {
 		_tprintf(TEXT("[!] Erro ao criar a thread.\n"));
 		UnmapViewOfFile(tDadosMemPartilhada.jogo);
 		UnmapViewOfFile(tDadosMemPartilhada.memPar);
