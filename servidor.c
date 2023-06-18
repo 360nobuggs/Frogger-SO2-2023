@@ -101,16 +101,19 @@ DWORD WINAPI threadJogo(LPVOID lpParam)
 	ThreadDadosMemPartilhada* tDados = (ThreadDadosMemPartilhada*)lpParam;
 	while (tDados->terminar != 1)
 	{
-		WaitForSingleObject(tDados->hMutex, INFINITE);
-		_tprintf(TEXT("\n Tempo restante: %d\n"), tDados->jogo->tempo);
-		for (int i = 1; i <= tDados->jogo->dim_max; i++)
+		if (tDados->jogo->tempo > 4)
 		{
-			move_fila(tDados->jogo, i);
+			WaitForSingleObject(tDados->hMutex, INFINITE);
+			_tprintf(TEXT("\n Tempo restante: %d\n"), tDados->jogo->tempo);
+			for (int i = 1; i <= tDados->jogo->dim_max; i++)
+			{
+				move_fila(tDados->jogo, i);
+			}
+			mostra_mapa(tDados->jogo->mapa, tDados->jogo->dim_max);
+			ReleaseMutex(tDados->hMutex);
+			SetEvent(tDados->hEvent);
+			Sleep(5000 - (tDados->jogo->v_inicial) * 100);
 		}
-		mostra_mapa(tDados->jogo->mapa, tDados->jogo->dim_max);
-		ReleaseMutex(tDados->hMutex);
-		SetEvent(tDados->hEvent);
-		Sleep(5000 - (tDados->jogo->v_inicial) * 100);
 	}
 	return 0;
 }
